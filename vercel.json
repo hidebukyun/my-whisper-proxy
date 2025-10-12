@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/token.ts": {
+      "runtime": "edge"
+    }
+  }
+}

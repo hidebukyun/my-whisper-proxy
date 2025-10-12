@@ -1,0 +1,8 @@
+{
+  "name": "my-whisper-proxy",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "undici": "^6.19.8"
+  }
+}
