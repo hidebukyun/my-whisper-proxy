@@ -1,4 +1,3 @@
-// api/token.ts
 export const config = { runtime: "edge" };
 
 export default async function handler(req: Request) {
@@ -6,26 +5,25 @@ export default async function handler(req: Request) {
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
     if (!OPENAI_API_KEY) return j({ error: "Missing OPENAI_API_KEY" }, 500);
 
-    // Whisper Realtimeセッションの作成
-    // ✅ modelパラメータを削除し、Whisper専用エンドポイントに変更
-    const r = await fetch("https://api.openai.com/v1/realtime?model=gpt-4o-mini-transcribe", {
+    // ✅ 正しいRealtimeセッション生成API
+    const r = await fetch("https://api.openai.com/v1/realtime/sessions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        // 必要に応じてパラメータを追加可能
-        voice: "none"
+        model: "gpt-4o-mini-transcribe", // Whisper対応のリアルタイムモデル
+        voice: "none" // 音声応答不要の場合
       })
     });
 
+    const data = await r.json();
+
     if (!r.ok) {
-      const text = await r.text();
-      return j({ error: `Upstream ${r.status}: ${text}` }, r.status);
+      return j({ error: data.error || data }, r.status);
     }
 
-    const data = await r.json();
     return j(data, 200);
   } catch (e: any) {
     return j({ error: String(e?.message || e) }, 500);
@@ -42,5 +40,7 @@ function j(obj: any, status = 200) {
     }
   });
 }
+
+
 
 
