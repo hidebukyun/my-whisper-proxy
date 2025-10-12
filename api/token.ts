@@ -1,37 +1,27 @@
-export const config = { runtime: "edge" };
+// api/token.ts
+export const runtime = 'edge';
 
-export default async function handler(req: Request) {
-  try {
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-    if (!OPENAI_API_KEY) return j({ error: "Missing OPENAI_API_KEY" }, 500);
-
-    // 余計なパラメータは送らず model だけ指定
-    const r = await fetch("https://api.openai.com/v1/realtime/sessions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini-transcribe"
-      })
-    });
-
-    const data = await r.json();
-    if (!r.ok) return j({ error: data.error || data }, r.status);
-    return j(data);
-  } catch (e: any) {
-    return j({ error: String(e?.message || e) }, 500);
-  }
-}
-
-function j(obj: any, status = 200) {
-  return new Response(JSON.stringify(obj), {
-    status,
+export async function GET() {
+  const resp = await fetch('https://api.openai.com/v1/realtime/sessions', {
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    }
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY!}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      // ✅ Realtime で有効なモデルを指定
+      model: 'gpt-4o-realtime-preview',
+      // Optional: 音声を使うなら有効な voice 名を
+      // voice: 'alloy',
+      // modalities: ['text','audio'], // 必要なら
+    }),
+    // Realtime セッションは短寿命。キャッシュさせない
+    cache: 'no-store',
+  });
+
+  const data = await resp.json();
+  return new Response(JSON.stringify(data), {
+    status: resp.status,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
   });
 }
