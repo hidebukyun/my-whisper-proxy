@@ -12,7 +12,9 @@ export default async function handler(req: Request) {
     body: JSON.stringify({
       // ★ 文字起こし専用のモデルに戻す
       model: "gpt-4o-mini-transcribe",
-      modalities: ["audio"],           // 文字起こしだけなら audio で十分
+      - modalities: ["audio"],
+      + modalities: ["audio", "text"],
+           // 文字起こしだけなら audio で十分
       // 必要なら入力形式を宣言（AndroidからPCM16で送る前提）
       // input_audio_format: "pcm16",
       // サーバVADを使いたいなら（無音検出→自動応答）
@@ -25,6 +27,7 @@ export default async function handler(req: Request) {
     headers: { "Content-Type": "application/json" },
   });
 }
+
 
 
 
