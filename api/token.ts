@@ -1,30 +1,32 @@
-// api/token.ts
-export const runtime = 'edge';
+// api/token.ts  — Vercel Serverless Function 形式（Edgeでも可）
+export const config = { runtime: "edge" }; // Edge不要なら削除OK
 
-export async function GET() {
-  const resp = await fetch('https://api.openai.com/v1/realtime/sessions', {
-    method: 'POST',
+export default async function handler(req: Request) {
+  const r = await fetch("https://api.openai.com/v1/realtime/sessions", {
+    method: "POST",
     headers: {
-      'Authorization': `Bearer ${process.env.OPENAI_API_KEY!}`,
-      'Content-Type': 'application/json',
+      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`, // ← 本物の sk-...（Vercel env に設定）
+      "Content-Type": "application/json",
+      "OpenAI-Beta": "realtime=v1",
     },
     body: JSON.stringify({
-      // ✅ Realtime で有効なモデルを指定
-      model: "gpt-4o-realtime-preview-2024-10-01",
-      // Optional: 音声を使うなら有効な voice 名を
-      // voice: 'alloy',
-      // modalities: ['text','audio'], // 必要なら
+      // ★ 文字起こし専用のモデルに戻す
+      model: "gpt-4o-mini-transcribe",
+      modalities: ["audio"],           // 文字起こしだけなら audio で十分
+      // 必要なら入力形式を宣言（AndroidからPCM16で送る前提）
+      // input_audio_format: "pcm16",
+      // サーバVADを使いたいなら（無音検出→自動応答）
+      // turn_detection: { type: "server_vad", threshold: 0.5, prefix_padding_ms: 300, silence_duration_ms: 300, create_response: true },
     }),
-    // Realtime セッションは短寿命。キャッシュさせない
-    cache: 'no-store',
   });
 
-  const data = await resp.json();
+  const data = await r.json();
   return new Response(JSON.stringify(data), {
-    status: resp.status,
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+    headers: { "Content-Type": "application/json" },
   });
 }
+
+
 
 
 
