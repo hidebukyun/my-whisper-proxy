@@ -10,7 +10,7 @@ export async function GET() {
     },
     body: JSON.stringify({
       // ✅ Realtime で有効なモデルを指定
-      model: "gpt-4o-realtime-preview-2024-12-17",
+      model: "gpt-4o-realtime-preview",
       // Optional: 音声を使うなら有効な voice 名を
       // voice: 'alloy',
       // modalities: ['text','audio'], // 必要なら
@@ -25,5 +25,6 @@ export async function GET() {
     headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
   });
 }
+
 
 
