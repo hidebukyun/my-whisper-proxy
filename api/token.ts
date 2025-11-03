@@ -9,16 +9,16 @@ export default async function handler(req: any, res: any) {
         "OpenAI-Beta": "realtime=v1",
       },
       body: JSON.stringify({
-        // ✅ Realtime対応モデル名に変更
         model: "gpt-4o-mini-realtime-preview",
-        modalities: ["audio", "text"],
+        // ★ここが重要：オブジェクトではなく文字列で指定
+        input_audio_format: "pcm16",
+        // modalities は省略可（必要なら ["audio","text"]）
       }),
     });
 
-    const data = await r.json();
-    res.setHeader("Content-Type", "application/json");
-    res.status(r.status).send(JSON.stringify(data));
-  } catch (err: any) {
-    res.status(500).json({ error: err.message ?? "proxy error" });
+    const text = await r.text();
+    res.status(r.status).setHeader("content-type", "application/json").send(text);
+  } catch (e: any) {
+    res.status(500).send(e?.message ?? "proxy error");
   }
 }
