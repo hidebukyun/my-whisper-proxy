@@ -10,16 +10,26 @@ export default async function handler(req: any, res: any) {
     body: JSON.stringify({
       model: "gpt-4o-mini-realtime-preview",
       modalities: ["audio", "text"],
-      output_audio_format: "pcm16",
+
+      // 音声入出力
       input_audio_format: "pcm16",
+      output_audio_format: "pcm16",
 
-      // ★ これを追加：日本語を固定
-      input_audio_transcription: {
-        language: "ja"
-      }
+      // ★ 言語を日本語に固定（精度向上）
+      input_audio_transcription: { language: "ja" },
 
-      // （任意）VADの調整は今のままでOK
-      // turn_detection: { type: "server_vad", threshold: 0.5, prefix_padding_ms: 300, silence_duration_ms: 200 }
+      // ★ これが重要：サーバ側で turn を検出し、自動で response を生成
+      turn_detection: {
+        type: "server_vad",
+        threshold: 0.5,
+        prefix_padding_ms: 300,
+        silence_duration_ms: 400,
+        create_response: true,          // ← これが無いとテキストが来ません
+        interrupt_response: true
+      },
+
+      // 任意：軽いプロンプト（語彙誘導したいとき）
+      // instructions: "日本語で正確に文字起こししてください。"
     }),
   });
 
