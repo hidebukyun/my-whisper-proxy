@@ -1,52 +1,40 @@
-// api/token.ts
-export default async function handler(req: any, res: any) {
-  try {
-    const r = await fetch("https://api.openai.com/v1/realtime/sessions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-        "OpenAI-Beta": "realtime=v1",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini-realtime-preview",
-        modalities: ["audio", "text"],
-        input_audio_format: "pcm16",
-        output_audio_format: "pcm16",
+// api/token.ts  — Edge で動く GET/POST 両対応 & ek を直返し
+export const runtime = 'edge';
 
-        // 入力／出力フォーマット
-        input_audio_format: "pcm16",
-        output_audio_format: "pcm16",
+export async function GET()  { return createSession(); }
+export async function POST() { return createSession(); }
 
-        // ✅ 修正ポイント：model と language の両方を指定！
-        input_audio_transcription: {
-          model: "gpt-4o-transcribe",
-          language: "ja",
-        },
+async function createSession(): Promise<Response> {
+  const r = await fetch('https://api.openai.com/v1/realtime/sessions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY!}`,
+      'Content-Type': 'application/json',
+      'OpenAI-Beta': 'realtime=v1',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini-realtime-preview',
+      // 受信側の入力フォーマットを固定
+      input_audio_format: 'pcm16',
+      // ASR は日本語優先（必要に応じて変更）
+      input_audio_transcription: { model: 'gpt-4o-transcribe', language: 'ja' },
+      // 任意：応答音声を使っていないなら省略可
+      output_audio_format: 'pcm16'
+    }),
+  });
 
-        // サーバ側で音声区切りを検出し、文字起こしレスポンスを自動生成
-        turn_detection: {
-          type: "server_vad",
-          threshold: 0.55,
-          prefix_padding_ms: 300,
-          silence_duration_ms: 600,
-          create_response: true,
-          interrupt_response: true,
-        },
-　　　　　
-        // 任意の補足（指示プロンプトとして扱われる）
-        temperature: 0,                // ← 生成のぶれを抑える
-        instructions: "日本語音声を正確に文字起こししてください。",
-      }),
+  const data = await r.json();
+
+  if (!r.ok) {
+    // クライアントで原因が分かるようエラーをそのまま返す
+    return new Response(JSON.stringify({ error: data }), {
+      status: r.status, headers: { 'content-type': 'application/json' }
     });
-
-    const text = await r.text();
-    res.status(r.status)
-      .setHeader("content-type", "application/json")
-      .send(text);
-
-  } catch (e: any) {
-    res.status(500).send(e?.message ?? "proxy error");
   }
-}
 
+  // ★ モバイルが取りやすいよう top-level に ek を付けて返す
+  const ek = data?.client_secret?.value ?? null;
+  return new Response(JSON.stringify({ ...data, ek }), {
+    headers: { 'content-type': 'application/json' }
+  });
+}
