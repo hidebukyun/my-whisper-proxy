@@ -11,6 +11,8 @@ export default async function handler(req: any, res: any) {
       body: JSON.stringify({
         model: "gpt-4o-mini-realtime-preview",
         modalities: ["audio", "text"],
+        input_audio_format: "pcm16",
+        output_audio_format: "pcm16",
 
         // 入力／出力フォーマット
         input_audio_format: "pcm16",
@@ -18,21 +20,22 @@ export default async function handler(req: any, res: any) {
 
         // ✅ 修正ポイント：model と language の両方を指定！
         input_audio_transcription: {
-          model: "gpt-4o-mini-transcribe",
+          model: "gpt-4o-transcribe",
           language: "ja",
         },
 
         // サーバ側で音声区切りを検出し、文字起こしレスポンスを自動生成
         turn_detection: {
           type: "server_vad",
-          threshold: 0.5,
+          threshold: 0.55,
           prefix_padding_ms: 300,
-          silence_duration_ms: 400,
+          silence_duration_ms: 600,
           create_response: true,
           interrupt_response: true,
         },
-
+　　　　　
         // 任意の補足（指示プロンプトとして扱われる）
+        temperature: 0,                // ← 生成のぶれを抑える
         instructions: "日本語音声を正確に文字起こししてください。",
       }),
     });
@@ -46,3 +49,4 @@ export default async function handler(req: any, res: any) {
     res.status(500).send(e?.message ?? "proxy error");
   }
 }
+
